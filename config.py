@@ -14,6 +14,11 @@ PROOFREAD_SALARY = 10
 SUBTITLE_EDIT_SALARY = 40
 COMPRESSION_SALARY = 15
 
+TAGS = ['ID', '时间轴', '翻译', '校对', '后期', '压制', '总计', '总奶茶', '打轴获得奶茶',
+        '翻译获得奶茶', '校对获得奶茶', '校对增益奶茶', '总打轴视频时间', '总翻译视频时间', '总校对视频时间']
+TAGS_LENGTH = len(TAGS)
+
+
 RELATED_COLS.extend(TIIMELINE_COL)
 RELATED_COLS.extend(PROOFREAD_COL)
 RELATED_COLS.extend(TRANSLATION_COLS)
