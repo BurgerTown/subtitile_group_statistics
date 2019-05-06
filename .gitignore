@@ -1,2 +1,4 @@
 ~$example.xlsx
 __pycache__/
+example.json
+example_pure_salary.json

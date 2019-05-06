@@ -18,6 +18,7 @@
 git clone https://github.com/BurgerTown/subtitile_group_statics.git
 pip install -r requirements.txt
 ```
+
 ### 运行
 
 ```
@@ -30,6 +31,10 @@ python statics.py
 2. config.py里设置预设参数
 
 ## Change Log
+
+v0.1.1 (2019/5/6 17:40)
+- 修复在计算时人员的定位问题
+- 增加校对增益统计
 
 v0.1.0 (2019/5/6 16:00)
 - 发布
