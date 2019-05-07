@@ -4,6 +4,15 @@ import csv
 import json
 import xlrd
 
+VIDEO_TIME_COL = []  # 视频时间
+TIIMELINE_COL = []  # 时间轴
+PROOFREAD_COL = []  # 校对
+TRANSLATE_COLS = []  # 翻译
+OTHERS_COLS = []  # 后期与压制
+RELATED_COLS = []
+
+IGNORE_NAMES = ['负责人']
+
 
 def find_excel():
     files = os.listdir()
@@ -17,6 +26,40 @@ def find_excel():
 
 def read_excel(path):
     return xlrd.open_workbook(path)
+
+
+def find_ignore_names(sheet):
+    row_values = sheet.row_values(0)
+    for row_value in row_values:
+        if row_value != '':
+            IGNORE_NAMES.append(row_value)
+
+
+def find_related_cols(sheet):
+    row_values = sheet.row_values(1)
+    col_indexs = []
+    for i in range(len(row_values)):
+        if row_values[i] == '负责人':
+            col_indexs.append(i)
+        if row_values[i] == '视频时长':
+            if sheet.cell(2, i).ctype == 3:
+                VIDEO_TIME_COL.append(i)
+    for col_index in col_indexs:
+        row_values = sheet.row_values(0)
+        if row_values[col_index] == '时间轴':
+            TIIMELINE_COL.append(col_index)
+        if '翻译' in row_values[col_index]:
+            TRANSLATE_COLS.append(col_index)
+        if row_values[col_index] == '校对':
+            PROOFREAD_COL.append(col_index)
+        if row_values[col_index] == '后期':
+            OTHERS_COLS.append(col_index)
+        if row_values[col_index] == '压制':
+            OTHERS_COLS.append(col_index)
+    RELATED_COLS.extend(TIIMELINE_COL)
+    RELATED_COLS.extend(PROOFREAD_COL)
+    RELATED_COLS.extend(TRANSLATE_COLS)
+    RELATED_COLS.extend(OTHERS_COLS)
 
 
 def init_dict(name_dict):
@@ -34,13 +77,13 @@ def collect_participants(sheet):
                 if name not in participants.keys():
                     participants[name] = {}
                     participants[name] = init_dict(participants[name])
-                    participants[name]['总计'] = 1
+                    participants[name]['参与次数'] = 1
                     if '翻译' in names[0]:
                         participants[name]['翻译'] = 1
                     else:
                         participants[name][names[0]] = 1
                 else:
-                    participants[name]['总计'] += 1
+                    participants[name]['参与次数'] += 1
                     if '翻译' in names[0]:
                         if '翻译' in participants[name].keys():
                             participants[name]['翻译'] += 1
@@ -68,7 +111,7 @@ def cal_time_related_salary(workbook, sheet, name, mode):
     for i in range(len(col_values)):  # 遍历对应列的数据
         if col_values[i] == name:  # 如果与传入的名字匹配
             row_index = i  # 获取其索引值 作为行的值
-            col_index = VIDEO_TIME_COL
+            col_index = VIDEO_TIME_COL[0]
             if sheet.cell(row_index, col_index).ctype == 3:  # 判断目标单元格的数据类型是否时间
                 video_time = xlrd.xldate_as_tuple(sheet.cell_value(
                     row_index, col_index), workbook.datemode)
@@ -86,7 +129,7 @@ def cal_time_related_salary(workbook, sheet, name, mode):
 def cal_translate_salary(workbook, sheet, name):
     salary = 0
     seconds = 0
-    for translation_col in TRANSLATION_COLS:
+    for translation_col in TRANSLATE_COLS:
         col_values = sheet.col_values(translation_col)
         for i in range(len(col_values)):
             if col_values[i] == name:
@@ -158,33 +201,42 @@ def cal_pure_salary(statics):
     return pure_salary
 
 
-def output_csv(file_name, sheet, statics):
+def cal_total(statics):
+    total = {}
+    total = init_dict(total)
+    for tag in TAGS:
+        temp_total = 0
+        for name in statics.keys():
+            if tag != 'ID':
+                temp_total += statics[name][tag]
+        total[tag] = temp_total
+    total['ID'] = '总计'
+    return total
+
+
+def output_csv(file_name, sheet, statics, total):
     with open('{}.csv'.format(file_name), 'w', encoding='utf_8_sig', newline='') as f:
-        # 输出原xlsx
-        # for row_index in range(sheet.nrows):
-        #     if sheet.cell(row_index, col_index+2).ctype == 3:
-        #             end_time = xlrd.xldate_as_tuple(sheet.cell_value(
-        #                 row_index, col_index+2), workbook.datemode)
-        #     row_value = sheet.row_values(row_num)
-        #     writer.writerow(row_value)
-        # 输出统计
         f_csv = csv.DictWriter(f, TAGS)
         f_csv.writeheader()
         for name in statics.keys():
             statics[name]['ID'] = name
             f_csv.writerow(statics[name])
+        f_csv.writerow(total)
 
 
 def statics(xlsx_file):
     file_name = os.path.splitext(xlsx_file)[0]
     workbook = read_excel(xlsx_file)
     sheet = workbook.sheet_by_index(0)
+    find_related_cols(sheet)
+    find_ignore_names(sheet)
     participants = collect_participants(sheet)
     statics = cal_time_and_salary(participants, workbook, sheet)
+    total = cal_total(statics)
     with open('{}_pure_salary.json'.format(file_name), 'w', encoding='utf8') as f:
         json.dump(cal_pure_salary(statics), f,
                   indent=1, ensure_ascii=False)
-    output_csv(file_name, sheet, statics)
+    output_csv(file_name, sheet, statics, total)
 
 
 def main():

@@ -14,14 +14,14 @@
 
 ### 安装步骤
 
-```
+```shell
 git clone https://github.com/BurgerTown/subtitile_group_statics.git
 pip install -r requirements.txt
 ```
 
 ### 运行
 
-```
+```shell
 python statics.py
 ```
 
@@ -32,19 +32,29 @@ python statics.py
 
 ## Change Log
 
+v0.1.3 (2019/5/7 11:00)
+
+- 增加自动查找各标签对应行数的功能 不需要手动设置了
+- 增加`总计`统计 结果会输出到CSV
+- 更新`config.py`的备注
+
 v0.1.2 (2019/5/6 23:00)
+
 - 修复在计算时的索引问题 此问题会导致漏算最后一行
-- 增加CSV导出功能
-- 移除了输出example.json的功能 由CSV代替
+- 增加CSV输出功能
+- 移除了输出`example.json`的功能 由CSV代替
 
 v0.1.1 (2019/5/6 17:40)
+
 - 修复在计算时人员的定位问题
 - 增加校对增益统计
 
 v0.1.0 (2019/5/6 16:00)
+
 - 发布
 
 ## Todo
 
-- [x] CSV导出功能
-- [ ] 自动查找各标签对应行数
+- [ ] 更新增益算法
+- [x] CSV输出功能
+- [x] 自动查找各标签对应行数
