@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ### 运行
 
 ```shell
-python statics.py
+python statistics.py
 ```
 
 ### 注意事项
