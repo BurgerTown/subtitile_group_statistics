@@ -15,7 +15,7 @@
 ### 安装步骤
 
 ```shell
-git clone https://github.com/BurgerTown/subtitile_group_statics.git
+git clone https://github.com/BurgerTown/subtitile_group_statistics.git
 pip install -r requirements.txt
 ```
 

@@ -194,49 +194,49 @@ def cal_time_and_salary(participants, workbook, sheet):
     return participants
 
 
-def cal_pure_salary(statics):
+def cal_pure_salary(statistics):
     pure_salary = {}
-    for name in statics.keys():
-        pure_salary[name] = statics[name]['总奶茶']
+    for name in statistics.keys():
+        pure_salary[name] = statistics[name]['总奶茶']
     return pure_salary
 
 
-def cal_total(statics):
+def cal_total(statistics):
     total = {}
     total = init_dict(total)
     for tag in TAGS:
         temp_total = 0
-        for name in statics.keys():
+        for name in statistics.keys():
             if tag != 'ID':
-                temp_total += statics[name][tag]
+                temp_total += statistics[name][tag]
         total[tag] = temp_total
     total['ID'] = '总计'
     return total
 
 
-def output_csv(file_name, sheet, statics, total):
+def output_csv(file_name, sheet, statistics, total):
     with open('{}.csv'.format(file_name), 'w', encoding='utf_8_sig', newline='') as f:
         f_csv = csv.DictWriter(f, TAGS)
         f_csv.writeheader()
-        for name in statics.keys():
-            statics[name]['ID'] = name
-            f_csv.writerow(statics[name])
+        for name in statistics.keys():
+            statistics[name]['ID'] = name
+            f_csv.writerow(statistics[name])
         f_csv.writerow(total)
 
 
-def statics(xlsx_file):
+def statistics(xlsx_file):
     file_name = os.path.splitext(xlsx_file)[0]
     workbook = read_excel(xlsx_file)
     sheet = workbook.sheet_by_index(0)
     find_related_cols(sheet)
     find_ignore_names(sheet)
     participants = collect_participants(sheet)
-    statics = cal_time_and_salary(participants, workbook, sheet)
-    total = cal_total(statics)
+    statistics = cal_time_and_salary(participants, workbook, sheet)
+    total = cal_total(statistics)
     with open('{}_pure_salary.json'.format(file_name), 'w', encoding='utf8') as f:
-        json.dump(cal_pure_salary(statics), f,
+        json.dump(cal_pure_salary(statistics), f,
                   indent=1, ensure_ascii=False)
-    output_csv(file_name, sheet, statics, total)
+    output_csv(file_name, sheet, statistics, total)
 
 
 def main():
@@ -246,10 +246,10 @@ def main():
         print('XLSX FILE NOT FOUND')
         exit()
     elif len(xlsx_files) == 1:
-        statics(xlsx_files[0])
+        statistics(xlsx_files[0])
     else:
         for xlsx_file in xlsx_file:
-            statics(xlsx_file)
+            statistics(xlsx_file)
 
 
 if __name__ == '__main__':
