@@ -1,7 +1,7 @@
 
 # 以下为各位置奶茶的标准 单位 分钟/元
 TIMELINE_SALARY = 3  # 时间轴
-TRANSLATE_SALARY = 15  # 翻译
+TRANSLATE_SALARY = 10  # 翻译
 PROOFREAD_SALARY = 10  # 校对
 SUBTITLE_EDIT_SALARY = 40  # 后期(字幕编辑)
 COMPRESSION_SALARY = 15  # 压制

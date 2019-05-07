@@ -121,6 +121,7 @@ def cal_time_related_salary(workbook, sheet, name, mode):
                         row_index, PROOFREAD_COL[0]+1).value
                 temp_time = video_time[4]*60+video_time[5]
                 seconds += temp_time
+                # 时间*工资/60+校对增益
                 salary += temp_time*salary_multiplier/60+salary_plus
                 total_salary_plus += salary_plus
     return salary, seconds, total_salary_plus
@@ -142,11 +143,12 @@ def cal_translate_salary(workbook, sheet, name):
                 if sheet.cell(row_index, col_index+2).ctype == 3:
                     end_time = xlrd.xldate_as_tuple(sheet.cell_value(
                         row_index, col_index+2), workbook.datemode)
-                salary_multiplier = sheet.cell(row_index, col_index+4).value
+                translate_rated = sheet.cell(row_index, col_index+4).value
                 temp_time = end_time[4]*60+end_time[5] - \
                     (start_time[4]*60+start_time[5])
                 seconds += temp_time
-                salary += temp_time*salary_multiplier*TRANSLATE_SALARY/60
+                # 时间*(基础工资+打分)/60
+                salary += temp_time*(TRANSLATE_SALARY+translate_rated)/60
     return salary, seconds
 
 
@@ -190,7 +192,7 @@ def cal_time_and_salary(participants, workbook, sheet):
             participant['校对增益奶茶'] = total_salary_plus
         if '后期' or '压制' in participant.keys():
             salary += cal_others_salary(participant)
-        participant['总奶茶'] = int(salary)
+        participant['总奶茶'] = round(salary)
     return participants
 
 
