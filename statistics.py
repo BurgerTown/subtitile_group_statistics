@@ -231,7 +231,6 @@ def beautifier(statistics, total):
                 total[key] = '{}:{}:{}'.format(data//3600, data//60, data % 60)
         else:
             total[key] = round(data, 2)
-        print(total[key])
     return statistics, total
 
 
