@@ -192,15 +192,8 @@ def cal_time_and_salary(participants, workbook, sheet):
             participant['校对增益奶茶'] = total_salary_plus
         if '后期' or '压制' in participant.keys():
             salary += cal_others_salary(participant)
-        participant['总奶茶'] = round(salary)
+        participant['总奶茶'] = salary
     return participants
-
-
-def cal_pure_salary(statistics):
-    pure_salary = {}
-    for name in statistics.keys():
-        pure_salary[name] = statistics[name]['总奶茶']
-    return pure_salary
 
 
 def cal_total(statistics):
@@ -214,6 +207,39 @@ def cal_total(statistics):
         total[tag] = temp_total
     total['ID'] = '总计'
     return total
+
+
+def beautifier(statistics, total):
+    for name in statistics.keys():
+        for key in statistics[name].keys():
+            data = statistics[name][key]
+            if '时间' in key and key != '时间轴':
+                statistics[name][key] = '{}:{}:{}'.format(
+                    data//3600, data//60, data % 60)
+            else:
+                statistics[name][key] = round(data, 2)
+    for key in total.keys():
+        data = total[key]
+        if key == 'ID':
+            continue
+        elif '时间' in key and key != '时间轴':
+            # dirty...
+            if data > 3600:
+                total[key] = '{}:{}:{}'.format(
+                    data//3600, (data-3600)//60, data % 60)
+            else:
+                total[key] = '{}:{}:{}'.format(data//3600, data//60, data % 60)
+        else:
+            total[key] = round(data, 2)
+        print(total[key])
+    return statistics, total
+
+
+def cal_pure_salary(statistics):
+    pure_salary = {}
+    for name in statistics.keys():
+        pure_salary[name] = statistics[name]['总奶茶']
+    return pure_salary
 
 
 def output_csv(file_name, sheet, statistics, total):
@@ -235,10 +261,11 @@ def statistics(xlsx_file):
     participants = collect_participants(sheet)
     statistics = cal_time_and_salary(participants, workbook, sheet)
     total = cal_total(statistics)
+    beautified_statistics, beautified_total = beautifier(statistics, total)
     with open('{}_pure_salary.json'.format(file_name), 'w', encoding='utf8') as f:
-        json.dump(cal_pure_salary(statistics), f,
+        json.dump(cal_pure_salary(beautified_statistics), f,
                   indent=1, ensure_ascii=False)
-    output_csv(file_name, sheet, statistics, total)
+    output_csv(file_name, sheet, beautified_statistics, beautified_total)
 
 
 def main():
