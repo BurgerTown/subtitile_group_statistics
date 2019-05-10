@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ### 运行
 
 ```shell
-python statistics.py
+python main.py
 ```
 
 ### 注意事项
@@ -31,6 +31,12 @@ python statistics.py
 2. config.py里设置预设参数
 
 ## Change Log
+
+v0.1.6 (2019/5/10 13:20)
+
+- 改为对象写法
+- 优化代码
+- 更新README.MD的`运行`与`Todo`
 
 v0.1.5 (2019/5/8 11:40)
 
@@ -64,6 +70,7 @@ v0.1.0 (2019/5/6 16:00)
 
 ## Todo
 
+- [ ] 命令行工具(maybe)
 - [ ] 输入CSV
 - [x] 更新增益算法
 - [x] CSV输出功能
