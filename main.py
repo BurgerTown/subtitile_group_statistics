@@ -13,8 +13,10 @@ def find_excel():
 
 
 def main():
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(current_path)
     xlsx_files = find_excel()
+
     if len(xlsx_files) == 0:
         print('XLSX FILE NOT FOUND')
         exit()
@@ -22,13 +24,17 @@ def main():
         statistics = Statistics()
         statistics.count(xlsx_files[0])
     else:
-        length = len(xlsx_files)
-        threads = [None] * length
-        for i in range(0, length):
+        # length = len(xlsx_files)
+        # threads = [None] * length
+        # for i in range(0, length):
+        #     statistics = Statistics()
+        #     threads[i] = Thread(target=statistics.count(),
+        #                         args=[xlsx_files[i]])
+        #     threads[i].start()
+        for xlsx_file in xlsx_files:
             statistics = Statistics()
-            threads[i] = Thread(target=statistics.count(),
-                                args=[xlsx_files[i]])
-            threads[i].start()
+            os.chdir(current_path)
+            statistics.count(xlsx_file)
 
 
 if __name__ == '__main__':

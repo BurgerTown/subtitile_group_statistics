@@ -216,6 +216,17 @@ class Statistics():
             pure_salary[name] = self.statistics[name]['总奶茶']
         return pure_salary
 
+    def set_env(self):
+        if os.path.exists(self.file_name):
+            os.chdir(self.file_name)
+        else:
+            os.mkdir(self.file_name)
+            os.chdir(self.file_name)
+
+    def output_json(self):
+        with open('{}_pure_salary.json'.format(self.file_name), 'w', encoding='utf8') as f:
+            json.dump(self.cal_pure_salary(), f, indent=1, ensure_ascii=False)
+
     def output_csv(self):
         with open('{}.csv'.format(self.file_name), 'w', encoding='utf_8_sig', newline='') as f:
             f_csv = csv.DictWriter(f, TAGS)
@@ -237,6 +248,6 @@ class Statistics():
         self.cal_total()
         self.beautifier()
 
-        with open('{}_pure_salary.json'.format(self.file_name), 'w', encoding='utf8') as f:
-            json.dump(self.cal_pure_salary(), f, indent=1, ensure_ascii=False)
+        self.set_env()
+        self.output_json()
         self.output_csv()
