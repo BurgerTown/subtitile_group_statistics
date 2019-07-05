@@ -32,6 +32,13 @@ python main.py
 
 ## Change Log
 
+v0.1.8 (2019/7/5 11:30)
+
+- 修复`example.xlsx`一个小错误
+- `example.xlsx` -> `Example.xlsx`
+- 增加重复检测功能
+- 增加命令行输出
+
 v0.1.7 (2019/6/3 23:00)
 
 - 结果会输出到相对应文件名的文件夹
