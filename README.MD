@@ -32,7 +32,7 @@ python main.py
 
 ## Changelog
 
-[更新日志](/blob/master/CHANGELOG.md)
+[更新日志](/CHANGELOG.md)
 
 ## Todo
 
