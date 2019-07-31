@@ -176,6 +176,11 @@ class Statistics():
             participant['总奶茶'] = salary
             self.statistics[name] = participant
 
+    def add_extra(self):
+        for key in EXTRA_FIXED:
+            self.statistics[key] = self.init_dict({})
+            self.statistics[key]['总奶茶'] = EXTRA_FIXED[key]
+
     def cal_total(self):
         self.total = self.init_dict(self.total)
         for tag in TAGS:
@@ -245,6 +250,7 @@ class Statistics():
         self.find_IGNORE_NAMES()
         self.collect_participants()
         self.cal_time_and_salary()
+        self.add_extra()
         self.cal_total()
         self.beautifier()
 
