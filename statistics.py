@@ -8,11 +8,13 @@ import xlrd
 class Statistics():
 
     def __init__(self):
-        self.VIDEO_TIME_COL = []  # 视频时间
+        self.ASSAULT_COL = 0  # 是否突击
+        self.VIDEO_TIME_COL = 0  # 视频时间
         self.TIIMELINE_COL = []  # 时间轴
         self.PROOFREAD_COL = []  # 校对
         self.TRANSLATE_COLS = []  # 翻译
-        self.OTHERS_COLS = []  # 后期与压制
+        self.EDIT_COL = []  # 后期
+        self.COMPRESSION_COL = []  # 压制
         self.RELATED_COLS = []
         self.IGNORE_NAMES = ['负责人']
 
@@ -24,20 +26,19 @@ class Statistics():
     def read_excel(self, path):
         return xlrd.open_workbook(path)
 
-    def find_IGNORE_NAMES(self):
-        row_values = self.sheet.row_values(0)
-        for row_value in row_values:
-            if row_value != '':
-                self.IGNORE_NAMES.append(row_value)
-
     def find_RELATED_COLS(self):
-        row_values, col_indexs = self.sheet.row_values(1), []
+        '''
+        寻找有关联的关键字来定位
+        '''
+        row_values, col_indexs = self.sheet.row_values(INFOMATION_ROW), []
         for i in range(len(row_values)):
-            if row_values[i] == '负责人':
-                col_indexs.append(i)
             if row_values[i] == '视频时长':
                 if self.sheet.cell(2, i).ctype == 3:
-                    self.VIDEO_TIME_COL.append(i)
+                    self.VIDEO_TIME_COL = i
+            if row_values[i] == '是否突击':
+                self.ASSAULT_COL = i
+            if row_values[i] == '负责人':
+                col_indexs.append(i)
         for col_index in col_indexs:
             row_values = self.sheet.row_values(0)
             if row_values[col_index] == '时间轴':
@@ -47,173 +48,157 @@ class Statistics():
             if row_values[col_index] == '校对':
                 self.PROOFREAD_COL.append(col_index)
             if row_values[col_index] == '后期':
-                self.OTHERS_COLS.append(col_index)
+                self.EDIT_COL.append(col_index)
             if row_values[col_index] == '压制':
-                self.OTHERS_COLS.append(col_index)
+                self.COMPRESSION_COL.append(col_index)
+
         self.RELATED_COLS.extend(self.TIIMELINE_COL)
-        self.RELATED_COLS.extend(self.PROOFREAD_COL)
         self.RELATED_COLS.extend(self.TRANSLATE_COLS)
-        self.RELATED_COLS.extend(self.OTHERS_COLS)
+        self.RELATED_COLS.extend(self.PROOFREAD_COL)
+        self.RELATED_COLS.extend(self.EDIT_COL)
+        self.RELATED_COLS.extend(self.COMPRESSION_COL)
 
-    def init_dict(self, name_dict):
+    def init_dict(self, name):
+        '''
+        初始化名字字典
+        '''
+        name_dict = {}
         for tag in TAGS:
-            name_dict[tag] = 0
-        return name_dict
+            if tag == 'ID':
+                name_dict[tag] = name
+            else:
+                name_dict[tag] = 0
+        self.statistics[name] = name_dict
 
-    def collect_participants(self):
-        participants = {}
-        for i in self.RELATED_COLS:
-            names = self.sheet.col_values(i)
-            for name in names:
-                if name != '' and name not in self.IGNORE_NAMES:
-                    if name not in participants.keys():
-                        participants[name] = {}
-                        participants[name] = self.init_dict(participants[name])
-                        participants[name]['参与次数'] = 1
-                        if '翻译' in names[0]:
-                            participants[name]['翻译'] = 1
-                        else:
-                            participants[name][names[0]] = 1
-                    else:
-                        participants[name]['参与次数'] += 1
-                        if '翻译' in names[0]:
-                            if '翻译' in participants[name].keys():
-                                participants[name]['翻译'] += 1
-                            else:
-                                participants[name]['翻译'] = 1
-                        else:
-                            if names[0] in participants[name].keys():
-                                participants[name][names[0]] += 1
-                            else:
-                                participants[name][names[0]] = 1
-        self.participants = participants
+    def has_name(self, name):
+        if name not in self.statistics.keys():
+            self.init_dict(name)
 
-    def cal_time_related_salary(self, name, mode):
-        salary = seconds = total_salary_plus = 0
+    def count_row(self, row_value):
+        extra_multipier = 1.00
+        row_name = []
+        if self.sheet.cell(row_value, self.VIDEO_TIME_COL).ctype == 3:
+            video_time = xlrd.xldate_as_tuple(self.sheet.cell_value(
+                row_value, self.VIDEO_TIME_COL), self.workbook.datemode)
+        if self.sheet.cell(row_value, self.ASSAULT_COL).value:
+            extra_multipier = 1.00 + ASSAULT_EXTRA
+
+        for col_value in self.RELATED_COLS:
+            name = self.sheet.cell(row_value, col_value).value
+            if not name:
+                continue
+            self.has_name(name)
+            if name not in row_name:
+                row_name.append(name)
+                if extra_multipier != 1.00:
+                    self.statistics[name]['突击次数'] += 1
+            if col_value in self.TIIMELINE_COL:
+                self.cal_total_time_related_salary(
+                    name, video_time, '时间轴', 0, extra_multipier)
+
+            if col_value in self.TRANSLATE_COLS:
+                if self.sheet.cell(row_value, col_value+1).ctype == 3:
+                    start_time = xlrd.xldate_as_tuple(self.sheet.cell_value(
+                        row_value, col_value+1), self.workbook.datemode)
+                if self.sheet.cell(row_value, col_value+2).ctype == 3:
+                    end_time = xlrd.xldate_as_tuple(self.sheet.cell_value(
+                        row_value, col_value+2), self.workbook.datemode)
+                translate_rated = self.sheet.cell(row_value, col_value+4).value
+                self.cal_translate_salary(
+                    name, start_time, end_time, translate_rated, extra_multipier)
+
+            elif col_value in self.PROOFREAD_COL:
+                salary_plus = self.sheet.cell(
+                    row_value, self.PROOFREAD_COL[0]+1).value
+                self.cal_total_time_related_salary(
+                    name, video_time, '校对', salary_plus, extra_multipier)
+
+            elif col_value in self.EDIT_COL:
+                self.cal_others_salary(name, '后期', extra_multipier)
+
+            elif col_value in self.COMPRESSION_COL:
+                self.cal_others_salary(name, '压制', extra_multipier)
+
+    def begin_collect(self):
+        row_number = INFOMATION_ROW + 1
+        col_values = self.sheet.col_values(0)
+        for i in range(row_number, len(col_values)):
+            if col_values[i]:
+                self.count_row(row_number)
+                row_number += 1
+
+    def cal_total_time_related_salary(self, name, video_time, mode, salary_plus, extra_multipier):
+        seconds = video_time[4]*60+video_time[5]
         if mode == '时间轴':
             salary_multiplier = TIMELINE_SALARY
-            col = self.TIIMELINE_COL[0]
+            self.statistics[name]['总打轴视频时间'] += seconds
         else:
             salary_multiplier = PROOFREAD_SALARY
-            col = self.PROOFREAD_COL[0]
-        col_values = self.sheet.col_values(col)  # 获取对应列的数据
-        for i in range(len(col_values)):  # 遍历对应列的数据
-            if col_values[i] == name:  # 如果与传入的名字匹配
-                row_index, col_index = i, self.VIDEO_TIME_COL[0]
-                # 判断目标单元格的数据类型是否时间
-                if self.sheet.cell(row_index, col_index).ctype == 3:
-                    video_time = xlrd.xldate_as_tuple(self.sheet.cell_value(
-                        row_index, col_index), self.workbook.datemode)
-                    salary_plus = 0
-                    if mode == '校对':
-                        salary_plus = self.sheet.cell(
-                            row_index, self.PROOFREAD_COL[0]+1).value
-                    temp_time = video_time[4]*60+video_time[5]
-                    seconds += temp_time
-                    # 时间*工资/60+校对增益
-                    salary += temp_time*salary_multiplier/60+salary_plus
-                    total_salary_plus += salary_plus
-        return salary, seconds, total_salary_plus
+            self.statistics[name]['总校对视频时间'] += seconds
 
-    def cal_translate_salary(self, name):
-        salary = seconds = 0
-        for translation_col in self.TRANSLATE_COLS:
-            col_values = self.sheet.col_values(translation_col)
-            for i in range(len(col_values)):
-                if col_values[i] == name:
-                    temp_time, row_index, col_index = 0, i, translation_col
-                    if self.sheet.cell(row_index, col_index+1).ctype == 3:
-                        start_time = xlrd.xldate_as_tuple(self.sheet.cell_value(
-                            row_index, col_index+1), self.workbook.datemode)
-                    if self.sheet.cell(row_index, col_index+2).ctype == 3:
-                        end_time = xlrd.xldate_as_tuple(self.sheet.cell_value(
-                            row_index, col_index+2), self.workbook.datemode)
-                    translate_rated = self.sheet.cell(
-                        row_index, col_index+4).value
-                    temp_time = end_time[4]*60+end_time[5] - \
-                        (start_time[4]*60+start_time[5])
-                    seconds += temp_time
-                    # 时间*(基础工资+打分)/60
-                    salary += temp_time*(TRANSLATE_SALARY+translate_rated)/60
-        return salary, seconds
+        salary = seconds/60 * salary_multiplier * extra_multipier + salary_plus
+        if mode == '时间轴':
+            self.statistics[name]['打轴获得奶茶'] += salary
+        else:
+            self.statistics[name]['校对获得奶茶'] += salary
+            self.statistics[name]['校对增益奶茶'] += salary_plus
 
-    def cal_others_salary(self, participant):
-        salary = 0
-        if '后期' in participant.keys():
-            salary += participant['后期'] * SUBTITLE_EDIT_SALARY
-        if '压制' in participant.keys():
-            salary += participant['压制'] * COMPRESSION_SALARY
-        # 这两个都是 次数*工资
-        return salary
+        self.statistics[name][mode] += 1
+        self.statistics[name]['总参与次数'] += 1
+        self.statistics[name]['总奶茶'] += salary
 
-    def cal_time_and_salary(self):
-        for name in self.participants.keys():
-            participant, salary = self.participants[name], 0
-            if '时间轴' in participant.keys():
-                timeline_salary = timeline_time = total_salary_plus = 0
-                timeline_salary, timeline_time, total_salary_plus = self.cal_time_related_salary(
-                    name, '时间轴')
-                salary += timeline_salary
-                participant['总打轴视频时间'] = timeline_time
-                participant['打轴获得奶茶'] = timeline_salary
-            if '翻译' in participant.keys():
-                translate_time = translate_time = 0
-                translate_salary, translate_time = self.cal_translate_salary(
-                    name)
-                salary += translate_salary
-                participant['总翻译视频时间'] = translate_time
-                participant['翻译获得奶茶'] = translate_salary
-            if '校对' in participant.keys():
-                proofread_salary = proofread_time = total_salary_plus = 0
-                proofread_salary, proofread_time, total_salary_plus = self.cal_time_related_salary(
-                    name, '校对')
-                salary += proofread_salary
-                participant['总校对视频时间'] = proofread_time
-                participant['校对获得奶茶'] = proofread_salary
-                participant['校对增益奶茶'] = total_salary_plus
-            if '后期' or '压制' in participant.keys():
-                salary += self.cal_others_salary(participant)
-            participant['总奶茶'] = salary
-            self.statistics[name] = participant
+    def cal_translate_salary(self, name, start_time, end_time, translate_rated, extra_multipier):
+        work_time = end_time[4]*60+end_time[5] - \
+            (start_time[4]*60+start_time[5])
+        # 时间*(基础工资+打分)/60
+        salary = work_time*(TRANSLATE_SALARY+translate_rated) / \
+            60 * extra_multipier
+
+        self.statistics[name]['总翻译视频时间'] += work_time
+        self.statistics[name]['翻译获得奶茶'] += salary
+        self.statistics[name]['翻译'] += 1
+        self.statistics[name]['总参与次数'] += 1
+        self.statistics[name]['总奶茶'] += salary
+
+    def cal_others_salary(self, name, mode, extra_multipier):
+        if mode == '后期':
+            self.statistics[name]['后期'] += 1
+            salary = SUBTITLE_EDIT_SALARY
+        else:
+            self.statistics[name]['压制'] += 1
+            salary = COMPRESSION_SALARY
+        salary *= extra_multipier
+
+        self.statistics[name]['总参与次数'] += 1
+        self.statistics[name]['总奶茶'] += salary
 
     def add_extra(self):
-        for key in EXTRA_FIXED:
-            self.statistics[key] = self.init_dict({})
+        for key in EXTRA_FIXED.keys():
+            self.init_dict(key)
             self.statistics[key]['总奶茶'] = EXTRA_FIXED[key]
 
     def cal_total(self):
-        self.total = self.init_dict(self.total)
+        self.init_dict('总计')
         for tag in TAGS:
             temp = 0
             for name in self.statistics.keys():
                 if tag != 'ID':
                     temp += self.statistics[name][tag]
-            self.total[tag] = temp
-        self.total['ID'] = '总计'
+            self.statistics['总计'][tag] = temp
 
     def beautifier(self):
         for name in self.statistics.keys():
             for key in self.statistics[name].keys():
+                if key == 'ID':
+                    continue
                 data = self.statistics[name][key]
                 if '时间' in key and key != '时间轴':
-                    self.statistics[name][key] = '{}:{}:{}'.format(
-                        data//3600, data//60, data % 60)
+                    if data > 3600:
+                        self.statistics[name][key] = f'{data//3600}:{(data - 3600)//60}:{data % 60}'
+                    else:
+                        self.statistics[name][key] = f'{data//3600}:{data//60}:{data % 60}'
                 else:
                     self.statistics[name][key] = round(data, 2)
-        for key in self.total.keys():
-            data = self.total[key]
-            if key == 'ID':
-                continue
-            elif '时间' in key and key != '时间轴':
-                # dirty...
-                if data > 3600:
-                    self.total[key] = '{}:{}:{}'.format(
-                        data//3600, (data-3600)//60, data % 60)
-                else:
-                    self.total[key] = '{}:{}:{}'.format(
-                        data//3600, data//60, data % 60)
-            else:
-                self.total[key] = round(data, 2)
 
     def cal_pure_salary(self):
         pure_salary = {}
@@ -247,9 +232,7 @@ class Statistics():
         self.sheet = self.workbook.sheet_by_index(0)
 
         self.find_RELATED_COLS()
-        self.find_IGNORE_NAMES()
-        self.collect_participants()
-        self.cal_time_and_salary()
+        self.begin_collect()
         self.add_extra()
         self.cal_total()
         self.beautifier()

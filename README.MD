@@ -36,8 +36,9 @@ python main.py
 
 ## Todo
 
-- [ ] 命令行工具(maybe)
-- [ ] 输入CSV
+- [ ] 优化代码中的if判断(urgent)
+- [ ] 命令行工具(low prority)
+- [ ] 输入CSV(high priority)
 - [x] 更新增益算法
 - [x] CSV输出功能
 - [x] 自动查找各标签对应行数
