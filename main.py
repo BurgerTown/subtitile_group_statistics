@@ -18,12 +18,15 @@ def find_excel():
 def exclude_done(dirs, xlsx_files):
     results = []
     for xlsx_file in xlsx_files:
-        file_name = os.path.splitext(xlsx_file)[0]
-        if file_name not in dirs:
-            results.append(xlsx_file)
+        if xlsx_file == 'Template.xlsx':
+            continue
         else:
-            dirs.remove(file_name)
-            print('REMOVED FROM THE LIST: {}'.format(xlsx_file))
+            file_name = os.path.splitext(xlsx_file)[0]
+            if file_name not in dirs:
+                results.append(xlsx_file)
+            else:
+                dirs.remove(file_name)
+                print('REMOVED FROM THE LIST: {}'.format(xlsx_file))
     return results
 
 
